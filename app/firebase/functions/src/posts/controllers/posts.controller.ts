@@ -1,7 +1,9 @@
 import { RequestHandler } from 'express';
 
+import { envRuntime } from '../../config/typedenv.runtime';
 import { getAuthenticatedUser, getServices } from '../../controllers.utils';
 import { logger } from '../../instances/logger';
+import { enqueueParseUserPosts } from '../posts.task';
 import { getPostSchema } from './posts.schema';
 
 const DEBUG = true;
@@ -19,7 +21,7 @@ export const getUserPostsController: RequestHandler = async (
 
     const posts = await postsManager.getOfUser(userId);
     if (DEBUG) logger.debug(`${request.path}: posts`, { posts, userId });
-    response.status(200).send({ success: true, posts });
+    response.status(200).send({ success: true, data: posts });
   } catch (error) {
     logger.error('error', error);
     response.status(500).send({ success: false, error });
@@ -56,10 +58,10 @@ export const triggerParseController: RequestHandler = async (
 ) => {
   try {
     const userId = getAuthenticatedUser(request, true);
-    const { postsManager } = getServices(request);
 
-    /** TODO: Convert into async task call */
-    await postsManager.parseOfUser(userId);
+    const REGION = envRuntime.REGION || 'us-central1';
+
+    await enqueueParseUserPosts(userId, REGION);
 
     if (DEBUG) logger.debug(`${request.path}: parse triggered`, { userId });
     response.status(200).send({ success: true });
@@ -98,7 +100,7 @@ export const getPostController: RequestHandler = async (request, response) => {
           userId,
           post: post,
         });
-      response.status(200).send({ success: true, post });
+      response.status(200).send({ success: true, data: post });
     }
   } catch (error) {
     logger.error('error', error);
