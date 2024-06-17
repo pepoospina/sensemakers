@@ -3,11 +3,21 @@ import { AppPostSemantics, ParsePostResult } from './types.parser';
 import { PlatformPost } from './types.platform.posts';
 import { AppUser, PLATFORM } from './types.user';
 
+export interface GenericPostAuthor {
+  platformId: PLATFORM;
+  id: string;
+  username: string;
+  name: string;
+}
+
 /**
  * Properties of a post that must be computed in the convertToGeneric method
  */
 export interface GenericPostData {
+  url?: string;
   content: string;
+  author: GenericPostAuthor;
+  quotedPosts?: GenericPostData[];
 }
 
 /**
