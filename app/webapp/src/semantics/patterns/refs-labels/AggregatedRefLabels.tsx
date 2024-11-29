@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
 import { ParserOntology } from '../../../shared/types/types.parser';
-import { RefLabel } from '../../../shared/types/types.references';
+import { AuthorRefLabel } from '../../../shared/types/types.references';
 import { LabelColors } from '../../../ui-components';
 import { AppLabelsEditor } from '../../../ui-components/AppLabelsEditor';
 
@@ -10,7 +10,7 @@ interface LabelDetails {
 }
 
 export const AggregatedRefLabels = (props: {
-  refLabels: RefLabel[];
+  refLabels: AuthorRefLabel[];
   ontology?: ParserOntology;
 }) => {
   const labelsSummary = useMemo(() => {

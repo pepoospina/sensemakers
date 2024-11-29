@@ -9,7 +9,7 @@ import {
   usePostsFetcher,
 } from '../posts.fetcher/posts.fetcher.hook';
 import { RefWithLabels } from '../semantics/patterns/refs-labels/RefWithLabels';
-import { RefMeta } from '../shared/types/types.parser';
+import { RefParserMeta } from '../shared/types/types.parser';
 import { PLATFORM } from '../shared/types/types.platforms';
 import { PlatformProfile } from '../shared/types/types.profiles';
 import { SCIENCE_TOPIC_URI } from '../shared/utils/semantics.helper';
@@ -46,7 +46,7 @@ export const RefOverlay = (props: { refUrl: string }) => {
       try {
         if (refUrl) {
           if (DEBUG) console.log(`fetching ref ${refUrl}`);
-          const refMeta = await appFetch<RefMeta>('/api/refs/get', {
+          const refMeta = await appFetch<RefParserMeta>('/api/refs/get', {
             ref: refUrl,
           });
           return refMeta;

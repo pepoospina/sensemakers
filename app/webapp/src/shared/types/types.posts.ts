@@ -1,5 +1,9 @@
 import { FetchParams } from './types.fetch';
-import { AppPostSemantics, ParsePostResult, RefMeta } from './types.parser';
+import {
+  AppPostSemantics,
+  ParsePostResult,
+  RefParserMeta,
+} from './types.parser';
 import { PlatformPost } from './types.platform.posts';
 import { PLATFORM } from './types.platforms';
 import { RefLabel } from './types.references';
@@ -30,7 +34,7 @@ export interface StructuredSemantics {
   labels?: string[];
   keywords?: string[];
   refs?: string[];
-  refsMeta?: Record<string, RefMeta>;
+  refsMeta?: Record<string, RefParserMeta>;
   topic?: string;
 }
 

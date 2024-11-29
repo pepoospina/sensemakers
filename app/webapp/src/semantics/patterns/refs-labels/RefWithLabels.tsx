@@ -1,8 +1,7 @@
 import { Box } from 'grommet';
 import { useMemo } from 'react';
 
-import { ParserOntology, RefMeta } from '../../../shared/types/types.parser';
-import { RefLabel } from '../../../shared/types/types.references';
+import { OntologyItem } from '../../../shared/types/types.parser';
 import { AppLabelsEditor } from '../../../ui-components/AppLabelsEditor';
 import { LoadingDiv } from '../../../ui-components/LoadingDiv';
 import { RefCard } from '../common/RefCard';
@@ -13,28 +12,26 @@ import { RefData } from './process.ref.labels';
 export const RefWithLabels = (props: {
   ix: number;
   refUrl: string;
-  refData: RefData;
+  labelsUris: string[];
+  semantic_predicates?: OntologyItem[];
   showLabels?: boolean;
   showDescription?: boolean;
-  ontology?: ParserOntology;
   addLabel: (labelUri: string) => void;
   removeLabel: (labelUri: string) => void;
   editable?: boolean;
-  allRefs: [string, RefData][];
-  refLabels?: RefLabel[];
   authorProfileId?: string;
 }) => {
-  const labelsOntology = props.ontology?.semantic_predicates;
-  const refData = props.refData;
+  const { semantic_predicates } = props;
   const { showLabels } =
     props.showLabels !== undefined ? props : { showLabels: true };
+  const { labelsUris } = props;
 
   /** display names for selected labels */
   let labelsDisplayNames = useMemo(
     () =>
-      refData.labelsUris.map((labelUri) => {
-        const label_ontology = labelsOntology
-          ? labelsOntology.find((item) => item.uri === labelUri)
+      labelsUris.map((labelUri) => {
+        const label_ontology = semantic_predicates
+          ? semantic_predicates.find((item) => item.uri === labelUri)
           : undefined;
 
         if (!label_ontology)
@@ -42,7 +39,7 @@ export const RefWithLabels = (props: {
 
         return label_ontology.display_name;
       }),
-    [labelsOntology, refData.labelsUris]
+    [semantic_predicates, labelsUris]
   );
 
   // make labelsDisplayNames unique
@@ -51,17 +48,17 @@ export const RefWithLabels = (props: {
   /** list of possible labels from ontology (filtering those selected) */
   const optionDisplayNames = useMemo(
     () =>
-      labelsOntology
-        ? labelsOntology
-            .filter((l) => !refData.labelsUris.includes(l.uri))
+      semantic_predicates
+        ? semantic_predicates
+            .filter((l) => !labelsUris.includes(l.uri))
             .map((l) => l.display_name)
         : undefined,
-    [labelsOntology, refData.labelsUris]
+    [semantic_predicates, labelsUris]
   );
 
   const getLabelFromDisplayName = (displayName: string) => {
-    const item = labelsOntology
-      ? labelsOntology.find((l) => l.display_name === displayName)
+    const item = semantic_predicates
+      ? semantic_predicates.find((l) => l.display_name === displayName)
       : undefined;
     if (!item)
       throw new Error(
@@ -147,7 +144,10 @@ export const RefWithLabels = (props: {
   );
 };
 
-const getSourceRefNumber = (meta: RefMeta, allRefs: [string, RefData][]) => {
+const getSourceRefNumber = (
+  meta: RefParserMeta,
+  allRefs: [string, RefData][]
+) => {
   const refSource = allRefs.find(([ref]) => ref === meta.ref_source_url);
   return refSource?.[1].meta?.order ? refSource[1].meta.order : undefined;
 };

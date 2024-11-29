@@ -12,7 +12,7 @@ import {
   PostUpdate,
   PostsQueryDefined,
 } from '../@shared/types/types.posts';
-import { RefLabel, RefPostData } from '../@shared/types/types.references';
+import { AuthorRefLabel, RefPostData } from '../@shared/types/types.references';
 import { CollectionNames } from '../@shared/utils/collectionNames';
 import { DBInstance } from '../db/instance';
 import { BaseRepository, removeUndefined } from '../db/repo.base';
@@ -241,8 +241,8 @@ export class PostsRepository extends BaseRepository<AppPost, AppPostCreate> {
 
   public async getAggregatedRefLabels(
     references: string[]
-  ): Promise<Record<string, RefLabel[]>> {
-    const refsStats: Record<string, RefLabel[]> = {};
+  ): Promise<Record<string, AuthorRefLabel[]>> {
+    const refsStats: Record<string, AuthorRefLabel[]> = {};
 
     // Get all posts for each reference from their respective subcollections
     const postsPromises = references.map(async (reference) => {
@@ -257,7 +257,7 @@ export class PostsRepository extends BaseRepository<AppPost, AppPostCreate> {
         const refPost = doc.data() as RefPostData;
         if (refPost?.structuredSemantics?.labels) {
           const refLabels = refPost.structuredSemantics?.labels?.map(
-            (label): RefLabel => ({
+            (label): AuthorRefLabel => ({
               label,
             })
           );

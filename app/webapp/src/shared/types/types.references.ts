@@ -24,7 +24,8 @@ export type RefPostData = Pick<
   'id' | 'authorProfileId' | 'createdAtMs' | 'structuredSemantics'
 >;
 
-export interface RefLabel {
+/** Aggregated labels for one ref include the authorProfileId */
+export interface AuthorRefLabel {
   label: string;
   authorProfileId?: string;
 }

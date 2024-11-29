@@ -1,12 +1,15 @@
 import { Store } from 'n3';
 
-import { ParsedSupport, RefMeta } from '../../../shared/types/types.parser';
+import {
+  ParsedSupport,
+  ParserRefDetails,
+} from '../../../shared/types/types.parser';
 import { normalizeUrl } from '../../../shared/utils/links.utils';
 import { filterStore, forEachStore } from '../../../shared/utils/n3.utils';
 
 export interface RefData {
   labelsUris: string[];
-  meta?: RefMeta;
+  meta?: RefParserMeta;
 }
 export type RefsMap = Map<string, RefData>;
 
@@ -14,7 +17,7 @@ export const processRefLabels = (
   originalStore: Store,
   store: Store,
   support?: ParsedSupport,
-  refsMeta?: Record<string, RefMeta>
+  refsMeta?: Record<string, RefParserMeta>
 ): RefsMap => {
   const possiblePredicates = support?.ontology?.semantic_predicates?.map(
     (item) => item.uri

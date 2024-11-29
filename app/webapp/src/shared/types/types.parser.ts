@@ -1,5 +1,5 @@
 import { GenericThread } from './types.posts';
-import { OEmbed, RefLabel } from './types.references';
+import { OEmbed } from './types.references';
 
 export enum PARSER_MODE {
   REF_LABELS = 'REF_LABELS',
@@ -30,15 +30,6 @@ export interface OntologyItem {
   versions?: string[];
 }
 
-export interface RefMeta extends OEmbed {
-  item_type?: string;
-  order?: number;
-  ref_source_url?: string;
-  labels?: string[];
-  refLabels?: RefLabel[];
-  ontology?: ParserOntology;
-}
-
 export interface ParserOntology {
   allowed_topics: string[];
   keyword_predicate?: OntologyItem;
@@ -46,9 +37,15 @@ export interface ParserOntology {
   topics_predicate?: OntologyItem;
 }
 
+export interface ParserRefDetails {
+  oembed: OEmbed;
+  order?: number;
+  ref_source_url?: string;
+}
+
 export interface ParsedSupport {
   ontology?: ParserOntology;
-  refs_meta?: Record<string, RefMeta>;
+  refs_meta?: Record<string, ParserRefDetails>;
 }
 
 export enum SciFilterClassfication {
