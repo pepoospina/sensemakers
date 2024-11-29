@@ -22,9 +22,7 @@ export interface OEmbed {
 export type RefPostData = Pick<
   AppPost,
   'id' | 'authorProfileId' | 'createdAtMs' | 'structuredSemantics'
-> & {
-  platformPostUrl?: string;
-};
+>;
 
 export interface RefLabel {
   label: string;

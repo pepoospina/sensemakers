@@ -261,7 +261,6 @@ export class PostsRepository extends BaseRepository<AppPost, AppPostCreate> {
               label,
               postId: doc.id,
               authorProfileId: refPost.authorProfileId,
-              platformPostUrl: refPost.platformPostUrl,
             })
           );
           if (refLabels) {
