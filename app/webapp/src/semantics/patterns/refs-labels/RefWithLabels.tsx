@@ -77,14 +77,6 @@ export const RefWithLabels = (props: {
     props.addLabel(getLabelFromDisplayName(label).uri);
   };
 
-  const refLabels = props.refLabels;
-
-  const show =
-    refLabels &&
-    refLabels.find(
-      (refLabel) => refLabel.authorProfileId !== props.authorProfileId
-    ) !== undefined;
-
   return (
     <>
       {refData.meta ? (
