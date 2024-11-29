@@ -7,7 +7,7 @@ import { AppLabelsEditor } from '../../../ui-components/AppLabelsEditor';
 import { LoadingDiv } from '../../../ui-components/LoadingDiv';
 import { RefCard } from '../common/RefCard';
 import { AggregatedRefLabels } from './AggregatedRefLabels';
-import { RefData } from './process.semantics';
+import { RefData } from './process.ref.labels';
 
 /** renders the labels for one ref */
 export const RefWithLabels = (props: {

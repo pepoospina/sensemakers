@@ -12,7 +12,7 @@ import { splitArray } from '../../../ui-components/utils';
 import { useSemanticsStore } from '../common/use.semantics';
 import { PatternProps, PostClickTarget } from '../patterns';
 import { RefWithLabels } from './RefWithLabels';
-import { RefsMap, processRefLabels } from './process.semantics';
+import { RefsMap, processRefLabels } from './process.ref.labels';
 
 export const RefLabelsComponent = (props: PatternProps) => {
   const { store, originalStore } = useSemanticsStore(
