@@ -10,7 +10,7 @@ export interface RefData {
 }
 export type RefsMap = Map<string, RefData>;
 
-export const processSemantics = (
+export const processRefLabels = (
   originalStore: Store,
   store: Store,
   support?: ParsedSupport,

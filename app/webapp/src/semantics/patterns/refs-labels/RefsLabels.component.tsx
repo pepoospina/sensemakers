@@ -12,7 +12,7 @@ import { splitArray } from '../../../ui-components/utils';
 import { useSemanticsStore } from '../common/use.semantics';
 import { PatternProps, PostClickTarget } from '../patterns';
 import { RefWithLabels } from './RefWithLabels';
-import { RefsMap, processSemantics } from './process.semantics';
+import { RefsMap, processRefLabels } from './process.semantics';
 
 export const RefLabelsComponent = (props: PatternProps) => {
   const { store, originalStore } = useSemanticsStore(
@@ -46,7 +46,7 @@ export const RefLabelsComponent = (props: PatternProps) => {
   const refs = useMemo<RefsMap>(
     () =>
       originalStore && store && props.originalParsed
-        ? processSemantics(
+        ? processRefLabels(
             originalStore,
             store,
             props.originalParsed?.support,
