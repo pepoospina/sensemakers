@@ -157,10 +157,10 @@ export class PostsProcessing {
     semantics?: string,
     originalParsed?: ParsePostResult
   ): Promise<void> {
+    if (!semantics) return undefined;
+
     /** always delete old triples */
     await this.triples.deleteOfPost(postId, manager);
-
-    if (!semantics) return undefined;
 
     const post = await this.posts.get(postId, manager, true);
     const store = await parseRDF(semantics);
