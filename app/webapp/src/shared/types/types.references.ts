@@ -26,7 +26,4 @@ export type RefPostData = Pick<
 
 export interface RefLabel {
   label: string;
-  postId?: string;
-  authorProfileId?: string;
-  platformPostUrl?: string;
 }

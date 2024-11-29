@@ -259,8 +259,6 @@ export class PostsRepository extends BaseRepository<AppPost, AppPostCreate> {
           const refLabels = refPost.structuredSemantics?.labels?.map(
             (label): RefLabel => ({
               label,
-              postId: doc.id,
-              authorProfileId: refPost.authorProfileId,
             })
           );
           if (refLabels) {
