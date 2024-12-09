@@ -18,6 +18,13 @@ export const MultiTabFeeds = (props: {
   const { feeds, tabs, feedIxInit } = props;
 
   const [feedIx, setFeedIx] = useState<number>(feedIxInit || 0);
+  const tabSelected = (id: string) => {
+    const ix = tabs.findIndex((tab) => tab.id === id);
+    if (ix === -1) {
+      throw new Error('Unexpected tab id');
+    }
+    setFeedIx(ix);
+  };
 
   const n = feeds.length;
   const percWidth = 100 / n;
@@ -26,7 +33,7 @@ export const MultiTabFeeds = (props: {
     <>
       <FeedTabs
         feedIx={feedIx}
-        onTabClicked={(ix) => setFeedIx(ix)}
+        onTabClicked={(id) => tabSelected(id)}
         feedTabs={tabs}></FeedTabs>
       <div
         style={{

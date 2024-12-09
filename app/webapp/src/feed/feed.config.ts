@@ -6,6 +6,7 @@ export interface FeedTabConfig {
   tooltip: string;
   labels: string[];
   topic?: string;
+  showChevron?: boolean;
 }
 
 export const feedTabs: FeedTabConfig[] = [

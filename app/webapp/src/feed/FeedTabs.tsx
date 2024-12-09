@@ -1,10 +1,10 @@
-import { Box, BoxExtendedProps, Text } from 'grommet';
+import { Box } from 'grommet';
 import { useEffect, useRef, useState } from 'react';
 import { CSSProperties } from 'styled-components';
 
-import { AppButton } from '../ui-components';
 import { BoxCentered } from '../ui-components/BoxCentered';
 import { useThemeContext } from '../ui-components/ThemedApp';
+import { TabElement } from './TabElement';
 import { FeedTabConfig } from './feed.config';
 
 const RightIcon = () => {
@@ -37,7 +37,7 @@ const RightIcon = () => {
 
 export const FeedTabs = (props: {
   feedTabs: FeedTabConfig[];
-  onTabClicked: (tabIx: number) => void;
+  onTabClicked: (tabId: string) => void;
   feedIx: number;
 }) => {
   const { constants } = useThemeContext();
@@ -85,48 +85,6 @@ export const FeedTabs = (props: {
 
   const borderStyle = `1px solid ${constants.colors.border}`;
 
-  const tabElement = (text: string, ix: number, isSelected: boolean) => {
-    const internalBoxProps: BoxExtendedProps = {
-      direction: 'row',
-      gap: '4px',
-      align: 'center',
-      justify: 'center',
-      pad: { horizontal: '12px', vertical: '8px' },
-      style: { minWidth: '88px' },
-    };
-
-    const externalBoxProps: BoxExtendedProps = {
-      style: {
-        flex: '0 0 auto',
-        height: '100%',
-        justifyContent: 'center',
-        backgroundColor: isSelected ? '#FFFFFF' : 'transparent',
-        borderTop: borderStyle,
-        borderLeft: borderStyle,
-        borderRight: borderStyle,
-        borderBottom: isSelected ? 'none' : borderStyle,
-        borderRadius: '8px 8px 0 0',
-      },
-    };
-
-    return (
-      <Box {...externalBoxProps} key={text}>
-        <AppButton
-          plain
-          style={{ height: '100%' }}
-          onClick={() => {
-            onTabClicked(ix);
-          }}>
-          <Box {...internalBoxProps}>
-            <Box justify="center">
-              <Text size="small">{text}</Text>
-            </Box>
-          </Box>
-        </AppButton>
-      </Box>
-    );
-  };
-
   const spaceStyle: CSSProperties = {
     flex: '0 0 auto',
     height: '100%',
@@ -155,7 +113,10 @@ export const FeedTabs = (props: {
             height: '100%',
           }}>
           <div style={spaceStyle}></div>
-          {tabElement(tab.title, ix, feedIx === ix)}
+          <TabElement
+            tab={tab}
+            isSelected={feedIx === ix}
+            onTabClicked={onTabClicked}></TabElement>
           {ix === feedTabs.length - 1 && <div style={spaceStyle}></div>}
         </Box>
       ))}
