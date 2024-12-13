@@ -41,3 +41,7 @@ export type AccountProfileCreate<P extends PlatformProfile = PlatformProfile> =
   Omit<AccountProfile<P>, 'id'>;
 export type AccountProfileBase<P extends PlatformProfile = PlatformProfile> =
   Omit<AccountProfile<P>, 'id' | 'platformId'>;
+
+export interface LaunchProfilesFetchPayload {
+  profileUrls: string[];
+}

@@ -25,7 +25,7 @@ export const parseProfileUrl = (
   | {
       username: string;
       platformId: IDENTITY_PLATFORM;
-    }
+    } // This looks as a reusable type
   | undefined => {
   const url = new URL(profileUrl);
   const platformId = PLATFORM_URLS_MAP[url.hostname] || PLATFORM.Mastodon;

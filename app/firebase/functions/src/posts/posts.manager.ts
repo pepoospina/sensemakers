@@ -874,6 +874,7 @@ export class PostsManager {
       logger.debug(`fully deleting ${posts.length} posts of ${profileId}`);
     }
 
+    /** lets try to reuse processInBatches everytime we need to do this */
     const batchSize = 100;
 
     for (let i = 0; i < posts.length; i += batchSize) {

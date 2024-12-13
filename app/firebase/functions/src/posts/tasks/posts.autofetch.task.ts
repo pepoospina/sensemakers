@@ -18,6 +18,13 @@ export const AUTOFETCH_POSTS_TASK = 'autofetchPosts';
 
 const DEBUG_PREFIX = 'AUTOFETCH';
 
+/** Maybe we can start thinking about an autofetch service? and a jobs.repository?
+ * Its useful to have this logic well encapsulated, so that we can easily test it and reuse it.
+ *
+ * This function would then be
+ *
+ * await services.autofetch.tryTriggeringAutofetch(profileId)
+ */
 export const triggerAutofetchPostsForNonUsers = async (services: Services) => {
   if (DEBUG)
     logger.debug(`triggerAutofetchPostsForNonUsers`, undefined, DEBUG_PREFIX);

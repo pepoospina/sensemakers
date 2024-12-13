@@ -5,6 +5,7 @@ import { PUBLISHABLE_PLATFORM } from '../@shared/types/types.platforms';
 import {
   AccountProfileBase,
   AccountProfileRead,
+  LaunchProfilesFetchPayload,
 } from '../@shared/types/types.profiles';
 import { GetProfilePayload } from '../@shared/types/types.user';
 import {
@@ -16,6 +17,7 @@ import { getServices } from '../controllers.utils';
 import { logger } from '../instances/logger';
 import { FETCH_ACCOUNT_TASKS } from '../platforms/platforms.tasks';
 import { chunkNumber, enqueueTask } from '../tasksUtils/tasks.support';
+import { profilesFetchSchema } from './profiles.schema';
 
 const DEBUG = false;
 
@@ -40,6 +42,8 @@ export const getProfileController: RequestHandler = async (
     logger.debug(`${request.path} - payload`, { payload });
     const { users, db } = getServices(request);
 
+    /** The chunk below would be a nice getPublicProfile method under userService */
+    /** HERE */
     const profile = await db.run(async (manager) => {
       if (payload.user_id) {
         return users.profiles.getByProfileId(
@@ -53,10 +57,8 @@ export const getProfileController: RequestHandler = async (
         payload.platformId,
         payload.username!,
         manager,
-        false
+        true /** most get methods have a should throw parameter, no need to check for undefined below */
       );
-
-      if (!profileId) return undefined;
 
       return users.profiles.getByProfileId(profileId, manager, false);
     });
@@ -67,6 +69,7 @@ export const getProfileController: RequestHandler = async (
       profile: profile.profile,
       userId: profile.userId,
     };
+    /** TO HERE */
 
     if (DEBUG)
       logger.debug(`${request.path}: profile`, { profile: publicProfile });
@@ -77,6 +80,7 @@ export const getProfileController: RequestHandler = async (
   }
 };
 
+/** Maybe this should be renamed to launchProfilesFetch and it should do only that.  */
 export const addNonUserProfilesController: RequestHandler = async (
   request,
   response
@@ -88,26 +92,31 @@ export const addNonUserProfilesController: RequestHandler = async (
       });
 
     const services = getServices(request);
+    /** we should always use yup validation */
     const profileUrls = request.body as string[];
+
+    /** you can parse inside the for, no need to prepare the parsedProfiles array */
     const parsedProfiles = profileUrls
       .map((profileUrl) => {
         const parsed = parseProfileUrl(profileUrl);
         return parsed;
       })
-      .filter((profile) => profile);
+      .filter((profile) => profile); // this filter is not doing anything.
 
     for (const parsedProfile of parsedProfiles) {
       if (!parsedProfile) {
         continue;
       }
       if (DEBUG)
-        logger.debug('Fetching profile', {
+        logger.debug('Preparing to launch fetch task for profile', {
           platformId: parsedProfile.platformId,
           username: parsedProfile.username,
         });
 
       let profile: AccountProfileBase | undefined;
       try {
+        /** we should never split transactions unless they are stricty strictly necessary */
+        /** this call is exactly what getOrCreateProfileByUsername does before creating the profile, probably not needed */
         const hasProfile = await services.db.run(async (manager) => {
           return services.users.profiles.getByPlatformUsername(
             parsedProfile.platformId,
@@ -117,6 +126,9 @@ export const addNonUserProfilesController: RequestHandler = async (
         });
 
         /** skip fetching this profile if it already exists, as it will be fetched regularly */
+        /** this is counter-intuitive, the "user" of this endpoint wants the profile to be fetched now, it can be their
+         * responsibility to decide if they want to skip it
+         */
         if (hasProfile) {
           if (DEBUG)
             logger.debug('Profile has already been fetched, skipping', {
@@ -124,6 +136,7 @@ export const addNonUserProfilesController: RequestHandler = async (
             });
           continue;
         }
+
         profile = await services.db.run(async (manager) => {
           return services.users.getOrCreateProfileByUsername(
             parsedProfile.platformId,
@@ -151,6 +164,7 @@ export const addNonUserProfilesController: RequestHandler = async (
         parsedProfile.platformId,
         profile?.user_id
       );
+
       const chunkSize = 50;
       const amount = 10;
       const fetchAmountChunks = chunkNumber(amount, chunkSize);
@@ -194,6 +208,7 @@ export const deleteProfilesController: RequestHandler = async (
       });
 
     const services = getServices(request);
+    /** same comments as above */
     const profileUrls = request.body as string[];
     const parsedProfiles = profileUrls
       .map((profileUrl) => {
@@ -202,6 +217,9 @@ export const deleteProfilesController: RequestHandler = async (
       })
       .filter((profile) => profile);
 
+    /** You are running these deletes sequentially one by one, this might be slow, We should use processInBatches to
+     * to do this type of batch operations on the DB so that we dont overload it but run things in parallel. It can be made 10x faster easily
+     */
     for (const parsedProfile of parsedProfiles) {
       if (!parsedProfile) {
         continue;
@@ -226,6 +244,8 @@ export const deleteProfilesController: RequestHandler = async (
         continue;
       }
 
+      /** you can use the shouldThrow = true in getByPlatformUsername.
+       * Also this existence logic seens unnecessary as deleteAccountFull should account for that already */
       if (!profileId) {
         const error = `unable to find profile for ${parsedProfile.username} on ${parsedProfile.platformId}`;
         logger.error(error);
