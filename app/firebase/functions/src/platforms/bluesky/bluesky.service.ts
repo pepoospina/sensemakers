@@ -1,6 +1,7 @@
 import AtpAgent, {
   AppBskyFeedDefs,
   AppBskyFeedPost,
+  AtpSessionData,
   RichText,
 } from '@atproto/api';
 import * as jwt from 'jsonwebtoken';
@@ -38,6 +39,7 @@ import {
   PlatformProfile,
 } from '../../@shared/types/types.profiles';
 import { parseBlueskyURI } from '../../@shared/utils/bluesky.utils';
+import { TransactionManager } from '../../db/transaction.manager';
 import { logger } from '../../instances/logger';
 import { TimeService } from '../../time/time.service';
 import { UsersHelper } from '../../users/users.helper';
@@ -67,57 +69,81 @@ export class BlueskyService
       BlueskyAccountDetails
     >
 {
+  private agent: AtpAgent | undefined;
+
   constructor(
     protected time: TimeService,
     protected usersRepo: UsersRepository,
     protected config: BlueskyServiceConfig,
-    protected agent?: AtpAgent
+    protected adminCredentialsRepo?: AdminCredentialsRepository
   ) {}
 
-  private async getClient(
-    credentials?: BlueskyCredentials
-  ): Promise<{ client: AtpAgent; credentials?: BlueskyCredentials }> {
-    const session = await (async () => {
-      if (!this.agent) {
-        this.agent = new AtpAgent({
-          service: this.config.BLUESKY_SERVICE_URL,
-        });
+  private async getUrlAgent() {
+    const agent = new AtpAgent({
+      service: this.config.BLUESKY_SERVICE_URL,
+    });
+    return agent;
+  }
+
+  /** gets a valid session instance and handle session data in the DB */
+  private async getSession(manager: TransactionManager) {
+    const sessionData = await this.adminCredentialsRepo.get(PLATFORM.Bluesky);
+    const agent = await this.getUrlAgent();
+
+    if (!sessionData || !sessionData.session) {
+      await agent.login({
+        identifier: this.config.BLUESKY_USERNAME,
+        password: this.config.BLUESKY_APP_PASSWORD,
+      });
+
+      if (!agent.session) {
+        throw new Error('Failed to login to Bluesky with admin credentials');
       }
-      if (!credentials) {
-        if (this.agent?.session) {
-          return this.agent.session;
-        }
-        await this.agent.login({
-          identifier: this.config.BLUESKY_USERNAME,
-          password: this.config.BLUESKY_APP_PASSWORD,
-        });
-        if (!this.agent.session) {
-          throw new Error('Failed to login to Bluesky');
-        }
-        return this.agent.session;
-      }
-      return credentials;
-    })();
-    if (!this.agent) {
-      throw new Error('Failed to initialize bluesky client');
+
+      /** always set session after read */
+      await this.adminCredentialsRepo.set(
+        PLATFORM.Bluesky,
+        {
+          session: removeUndefinedFields(agent.session),
+        },
+        manager
+      );
     }
-    await this.agent.resumeSession(session);
-    if (!this.agent.session) {
+
+    return agent.session as AtpSessionData;
+  }
+
+  private async getAgent(manager: TransactionManager): Promise<{
+    client: AtpAgent;
+    credentials?: BlueskyCredentials;
+  }> {
+    const session = await this.getSession(manager);
+    const agent = await this.getUrlAgent();
+
+    await agent.resumeSession(session);
+
+    if (!agent.session) {
       throw new Error('Failed to initiate bluesky session');
     }
+
     const decodedAccessJwt = jwt.decode(
-      this.agent.session.accessJwt
+      agent.session.accessJwt
     ) as AccessJwtPayload;
 
     let newCredentials: BlueskyCredentials | undefined = undefined;
 
     /** if the access token is under 1 hour from expiring, refresh it */
     if (decodedAccessJwt.exp * 1000 - this.time.now() < 1000 * 60 * 60) {
-      await this.agent.sessionManager.refreshSession();
-      newCredentials = this.agent.session;
+      await agent.sessionManager.refreshSession();
+      newCredentials = agent.session;
     }
 
-    return { client: this.agent, credentials: newCredentials };
+    return { client: agent, credentials: newCredentials };
+  }
+
+  public async getAdminCredentials() {
+    const credentials = { read: agent.session, write: agent.session };
+    return credentials;
   }
 
   public async getSignupContext(userId?: string, params?: any): Promise<any> {
@@ -172,8 +198,7 @@ export class BlueskyService
   }
 
   public async getProfileByUsername(
-    username: string,
-    credentials?: BlueskyCredentials
+    username: string
   ): Promise<PlatformAccountProfile<PlatformProfile> | undefined> {
     try {
       const { client: agent } = await this.getClient(credentials);

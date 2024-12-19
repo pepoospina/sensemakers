@@ -30,6 +30,8 @@ import { DBInstance } from '../db/instance';
 import { removeUndefined } from '../db/repo.base';
 import { TransactionManager } from '../db/transaction.manager';
 import { logger } from '../instances/logger';
+import { BlueskyService } from '../platforms/bluesky/bluesky.service';
+import { useBlueskyAdminCredentials } from '../platforms/bluesky/bluesky.utils';
 import {
   IdentityServicesMap,
   PlatformsMap,
@@ -488,8 +490,7 @@ export class UsersService {
   public async getOrCreateProfileByUsername(
     platformId: IDENTITY_PLATFORM,
     username: string,
-    manager: TransactionManager,
-    credentials?: any
+    manager: TransactionManager
   ) {
     const profileId = await this.profiles.getByPlatformUsername(
       platformId,
@@ -500,6 +501,18 @@ export class UsersService {
     if (profileId) {
       return await this.profiles.getByProfileId(profileId, manager);
     }
+
+    const credentials = await (async () => {
+      if (platformId !== PLATFORM.Bluesky) {
+        return;
+      }
+
+      const blueskyService = (await this.platformServices.get(
+        platformId
+      )) as BlueskyService;
+      const credentials = await blueskyService.getAdminCredentials();
+      return credentials;
+    })();
 
     const profile = await this.getIdentityService(
       platformId
