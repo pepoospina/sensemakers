@@ -9,8 +9,11 @@ import {
   TopicsParams,
 } from '../@shared/types/types.parser';
 import {
+  FetchedPlatformPost,
+  FetchedResult,
   PlatformPostCreate,
   PlatformPostCreated,
+  PlatformPostMergeOrCreate,
   PlatformPostPosted,
   PlatformPostPublishOrigin,
   PlatformPostPublishStatus,
@@ -98,17 +101,20 @@ export class PostsManager {
 
   private initPlatformPost<T = any>(
     platformId: PLATFORM,
-    fetchedPost: PlatformPostPosted<T>
-  ) {
+    fetchedResult: FetchedPlatformPost
+  ): PlatformPostMergeOrCreate<T> {
     const platformPost: PlatformPostCreate = {
-      post_id: fetchedPost.post_id,
+      post_id: fetchedResult.post.post_id,
       platformId: platformId as PUBLISHABLE_PLATFORM,
       publishStatus: PlatformPostPublishStatus.PUBLISHED,
       publishOrigin: PlatformPostPublishOrigin.FETCHED,
-      posted: fetchedPost,
+      posted: fetchedResult.post,
     };
 
-    return platformPost;
+    return {
+      postCreate: platformPost,
+      root_post_id: fetchedResult.root_post_id,
+    };
   }
 
   public async fetchPostFromPlatform(
@@ -210,7 +216,7 @@ export class PostsManager {
 
       if (DEBUG)
         logger.debug(
-          `fetchUser ${platformId} - platformPosts: ${fetchedPosts.platformPosts.length}`,
+          `fetchUser ${platformId} - platformPosts: ${fetchedPosts.fetchedPosts.length}`,
           {
             fetched: fetchedPosts,
           }
@@ -218,7 +224,7 @@ export class PostsManager {
 
       const newFetchedDetails = await this.getNewFetchedStatus(
         platformParams,
-        fetchedPosts.fetched
+        fetchedPosts.fetchedDetails
       );
 
       await this.users.profiles.setAccountProfileFetched(
@@ -229,9 +235,9 @@ export class PostsManager {
       );
 
       /** convert them into a PlatformPost */
-      return fetchedPosts.platformPosts.map((fetchedPost) =>
-        this.initPlatformPost(platformId, fetchedPost)
-      );
+      return fetchedPosts.fetchedPosts.map((fetchedPost) => {
+        return this.initPlatformPost(platformId, fetchedPost);
+      });
     } catch (err: any) {
       logger.error(
         `Error at fetchAccountFromPlatform for user_id ${user_id} on platform ${platformId}`,

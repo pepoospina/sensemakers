@@ -52,9 +52,23 @@ export interface PlatformPostPosted<C = any, A = any> {
 
 export type PlatformPostSigned<C = any> = C;
 
+/**
+ * Platform services now can return a root_post_id to indicate the returned post is to be concatenated
+ * to an existing thread
+ */
+export interface FetchedPlatformPost<C = any> {
+  post: PlatformPostPosted<C>;
+  root_post_id?: string;
+}
+
+export interface PlatformPostMergeOrCreate<C = any> {
+  postCreate: PlatformPostCreate<C>;
+  root_post_id?: string;
+}
+
 export interface FetchedResult<C = any> {
-  fetched: FetchedDetails;
-  platformPosts: PlatformPostPosted<C>[];
+  fetchedDetails: FetchedDetails;
+  fetchedPosts: FetchedPlatformPost[];
   credentials?: AccountCredentials;
 }
 
@@ -97,7 +111,7 @@ export interface PlatformPostUpdate<D = any> extends PlatformPostPublish<D> {
 export type PerPlatformPublish = Map<PLATFORM, PlatformPostPublish[]>;
 
 export interface PlatformPostCreated {
-  platformPost: PlatformPost;
+  platformPost?: PlatformPost;
   post: AppPost; // In case a post was created
 }
 

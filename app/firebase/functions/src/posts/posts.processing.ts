@@ -3,6 +3,7 @@ import {
   PlatformPost,
   PlatformPostCreate,
   PlatformPostCreated,
+  PlatformPostMergeOrCreate,
 } from '../@shared/types/types.platform.posts';
 import { PLATFORM } from '../@shared/types/types.platforms';
 import {
@@ -31,6 +32,7 @@ import { PlatformsService } from '../platforms/platforms.service';
 import { TimeService } from '../time/time.service';
 import { UsersService } from '../users/users.service';
 import { PlatformPostsRepository } from './platform.posts.repository';
+import { PostsHelper } from './posts.helper';
 import { PostsRepository } from './posts.repository';
 
 /**
@@ -52,14 +54,15 @@ export class PostsProcessing {
    * It also creates an AppPost for that PlatformPost
    * */
   async createPlatformPost(
-    platformPost: PlatformPostCreate,
+    platformPost: PlatformPostMergeOrCreate,
     manager: TransactionManager,
     authorUserId?: string
   ): Promise<PlatformPostCreated | undefined> {
-    const existing = platformPost.posted
+    /** skip creating posts that already exist */
+    const existing = platformPost.postCreate.posted
       ? await this.platformPosts.getFrom_post_id(
-          platformPost.platformId,
-          platformPost.posted.post_id,
+          platformPost.postCreate.platformId,
+          platformPost.postCreate.posted.post_id,
           manager
         )
       : undefined;
@@ -69,12 +72,14 @@ export class PostsProcessing {
     }
 
     /** if a platformPost does not exist (most likely scenario) then create a new AppPost for this PlatformPost */
-    const genericPostData = await this.platforms.convertToGeneric(platformPost);
+    const genericPostData = await this.platforms.convertToGeneric(
+      platformPost.postCreate
+    );
 
     /** user_id might be defined or the intended one */
-    const user_id = platformPost.posted
-      ? platformPost.posted.user_id
-      : platformPost.draft?.user_id;
+    const user_id = platformPost.postCreate.posted
+      ? platformPost.postCreate.posted.user_id
+      : platformPost.postCreate.draft?.user_id;
 
     if (!user_id) {
       throw new Error(
@@ -82,37 +87,71 @@ export class PostsProcessing {
       );
     }
 
-    const platformPostCreated = this.platformPosts.create(
-      platformPost,
-      manager
-    );
+    if (platformPost.root_post_id) {
+      const existingPostId = await this.platformPosts.getFrom_post_id(
+        platformPost.postCreate.platformId,
+        platformPost.root_post_id,
+        manager,
+        true
+      );
 
-    /** the profile may not exist in the Profiles collection */
-    const authorProfileId = getProfileId(platformPost.platformId, user_id);
+      const existingPost = await this.posts.get(existingPostId, manager, true);
 
-    /** create AppPost */
-    const post = await this.createAppPost(
-      {
-        generic: genericPostData,
-        origin: platformPost.platformId,
-        authorProfileId,
-        authorUserId,
-        mirrorsIds: [platformPostCreated.id],
-        createdAtMs: platformPost.posted?.timestampMs || this.time.now(),
-        editStatus: AppPostEditStatus.PENDING,
-      },
-      manager
-    );
+      const newGenericThread = PostsHelper.mergeGenericThreads(
+        existingPost.generic,
+        genericPostData
+      );
+      // replace current thread and mark the post as unparsed
+      existingPost.generic = newGenericThread;
 
-    /** set the postId of the platformPost */
-    this.platformPosts.setPostId(platformPostCreated.id, post.id, manager);
+      this.posts.update(
+        existingPostId,
+        {
+          generic: newGenericThread,
+          parsedStatus: AppPostParsedStatus.UNPROCESSED,
+          parsingStatus: AppPostParsingStatus.IDLE,
+        },
+        manager
+      );
 
-    return { post, platformPost: platformPostCreated };
+      return { post: existingPost, platformPost: undefined };
+    } else {
+      const platformPostCreated = this.platformPosts.create(
+        platformPost.postCreate,
+        manager
+      );
+
+      /** the profile may not exist in the Profiles collection */
+      const authorProfileId = getProfileId(
+        platformPost.postCreate.platformId,
+        user_id
+      );
+
+      /** create AppPost */
+      const post = await this.createAppPost(
+        {
+          generic: genericPostData,
+          origin: platformPost.postCreate.platformId,
+          authorProfileId,
+          authorUserId,
+          mirrorsIds: [platformPostCreated.id],
+          createdAtMs:
+            platformPost.postCreate.posted?.timestampMs || this.time.now(),
+          editStatus: AppPostEditStatus.PENDING,
+        },
+        manager
+      );
+
+      /** set the postId of the platformPost */
+      this.platformPosts.setPostId(platformPostCreated.id, post.id, manager);
+
+      return { post, platformPost: platformPostCreated };
+    }
   }
 
   /** Store all platform posts */
   async createPlatformPosts(
-    platformPosts: PlatformPostCreate[],
+    platformPosts: PlatformPostMergeOrCreate[],
     manager: TransactionManager,
     authorUserId?: string
   ) {

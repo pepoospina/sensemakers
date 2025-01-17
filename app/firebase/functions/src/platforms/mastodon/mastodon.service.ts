@@ -296,7 +296,7 @@ export class MastodonService
     if (allStatuses.length === 0) {
       if (DEBUG) logger.debug('fetch no statuses found', {}, DEBUG_PREFIX);
       return {
-        fetched: {
+        fetchedDetails: {
           newest_id: undefined,
           oldest_id: undefined,
         },

@@ -321,8 +321,8 @@ export class BlueskyService
       post: thread,
     }));
 
-    const result = {
-      fetched: {
+    const result: FetchedResult = {
+      fetchedDetails: {
         newest_id: newestId,
         oldest_id: oldestId,
       },

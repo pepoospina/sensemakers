@@ -11,6 +11,7 @@ import {
 import {
   AppPostFull,
   GenericPost,
+  GenericThread,
   PostsQueryDefined,
 } from '../@shared/types/types.posts';
 import { AccountDetailsBase, DefinedIfTrue } from '../@shared/types/types.user';
@@ -97,6 +98,11 @@ export class PostsHelper {
       return newestPost.uri;
     }
     return platformPosted.post_id;
+  }
+
+  static mergeGenericThreads(base: GenericThread, toMerge: GenericThread) {
+    base.thread = base.thread.concat(toMerge.thread);
+    return base;
   }
 }
 
