@@ -56,7 +56,8 @@ export interface PlatformService<
   UserDetails extends AccountDetailsBase = AccountDetailsBase,
   DraftType = any,
 > extends IdentityService<SignupContext, SignupData, UserDetails> {
-  get(
+  getSinglePost();
+  getThread(
     post_id: string,
     credentials?: AccountCredentials
   ): Promise<

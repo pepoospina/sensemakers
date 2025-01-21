@@ -178,24 +178,33 @@ export class PostsManager {
     const platformPostId = await this.processing.platformPosts.getFrom_post_id(
       platformId,
       post_id,
-      manager,
-      true
+      manager
     );
 
-    const platformPost = await this.processing.platformPosts.get<
-      true,
-      PlatformPost
-    >(platformPostId, manager, true);
+    const platformPostPosted = (() => {
+      if (platformPostId) {
+        await this.processing.platformPosts.get<true, PlatformPost>(
+            platformPostId,
+            manager,
+            true
+          )
 
-    if (platformPost.platformId === PLATFORM.Bluesky) {
+      } else {
+        ... this.platforms.get(platformId).getSinglePost(/....);
+      }
+    })()
+      
+      
+
+    if (platformPostPosted.platformId === PLATFORM.Bluesky) {
       return (platformPost as PlatformPost<BlueskyThread>).posted?.timestampMs;
     }
 
-    if (platformPost.platformId === PLATFORM.Twitter) {
+    if (platformPostPosted.platformId === PLATFORM.Twitter) {
       return (platformPost as PlatformPost<TwitterThread>).posted?.timestampMs;
     }
 
-    if (platformPost.platformId === PLATFORM.Mastodon) {
+    if (platformPostPosted.platformId === PLATFORM.Mastodon) {
       return (platformPost as PlatformPost<MastodonThread>).posted?.timestampMs;
     }
 
